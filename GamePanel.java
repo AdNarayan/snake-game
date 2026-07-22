@@ -68,6 +68,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
         if (newHead.equals(food)) {
             score++;
+            SoundManager.playEat();
             spawnFood();
         } else {
             snake.remove(snake.size() - 1);
@@ -80,12 +81,14 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         if (head.x < 0 || head.x >= BOARD_WIDTH || head.y < 0 || head.y >= BOARD_HEIGHT) {
             running = false;
             gameOver = true;
+            SoundManager.playGameOver();
         }
 
         for (int i = 1; i < snake.size(); i++) {
             if (head.equals(snake.get(i))) {
                 running = false;
                 gameOver = true;
+                SoundManager.playGameOver();
                 break;
             }
         }
@@ -95,34 +98,62 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        if (running || gameOver) {
-            g.setColor(Color.RED);
-            g.fillOval(food.x * TILE_SIZE, food.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            for (int i = 0; i < snake.size(); i++) {
-                Point segment = snake.get(i);
-                if (i == 0) {
-                    g.setColor(Color.GREEN);
-                } else {
-                    g.setColor(new Color(45, 180, 0));
-                }
-                g.fillRect(segment.x * TILE_SIZE, segment.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        if (running || gameOver) {
+            g2d.setColor(new Color(30, 30, 30));
+            for (int x = 0; x <= BOARD_WIDTH; x++) {
+                g2d.drawLine(x * TILE_SIZE, 0, x * TILE_SIZE, WINDOW_HEIGHT);
+            }
+            for (int y = 0; y <= BOARD_HEIGHT; y++) {
+                g2d.drawLine(0, y * TILE_SIZE, WINDOW_WIDTH, y * TILE_SIZE);
             }
 
-            g.setColor(Color.WHITE);
-            g.setFont(new Font("Arial", Font.BOLD, 18));
-            g.drawString("Score: " + score, 10, 25);
+            int cx = food.x * TILE_SIZE + TILE_SIZE / 2;
+            int cy = food.y * TILE_SIZE + TILE_SIZE / 2;
+            for (int r = 3; r >= 0; r--) {
+                g2d.setColor(new Color(255, 50, 50, 60 - r * 15));
+                g2d.fillOval(cx - (TILE_SIZE / 2 + r * 3), cy - (TILE_SIZE / 2 + r * 3),
+                             TILE_SIZE + r * 6, TILE_SIZE + r * 6);
+            }
+            g2d.setColor(Color.RED);
+            g2d.fillOval(food.x * TILE_SIZE + 2, food.y * TILE_SIZE + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+
+            int size = snake.size();
+            for (int i = 0; i < size; i++) {
+                Point segment = snake.get(i);
+                float ratio = (float) i / Math.max(size - 1, 1);
+                int red = (int) (30 * ratio);
+                int green = (int) (255 - 150 * ratio);
+                int blue = (int) (80 * ratio);
+                g2d.setColor(new Color(red, green, blue));
+                if (i == 0) {
+                    g2d.fillRoundRect(segment.x * TILE_SIZE + 1, segment.y * TILE_SIZE + 1, TILE_SIZE - 2, TILE_SIZE - 2, 6, 6);
+                } else {
+                    g2d.fillRect(segment.x * TILE_SIZE + 1, segment.y * TILE_SIZE + 1, TILE_SIZE - 2, TILE_SIZE - 2);
+                }
+            }
+
+            g2d.setColor(new Color(0, 0, 0, 160));
+            g2d.fillRect(0, 0, WINDOW_WIDTH, 35);
+            g2d.setColor(Color.WHITE);
+            g2d.setFont(new Font("Segoe UI", Font.BOLD, 18));
+            g2d.drawString("Score: " + score, 12, 25);
 
             if (gameOver) {
-                g.setColor(Color.WHITE);
-                g.setFont(new Font("Arial", Font.BOLD, 40));
-                FontMetrics metrics = getFontMetrics(g.getFont());
+                g2d.setColor(new Color(0, 0, 0, 180));
+                g2d.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+                g2d.setColor(Color.WHITE);
+                g2d.setFont(new Font("Segoe UI", Font.BOLD, 44));
+                FontMetrics metrics = getFontMetrics(g2d.getFont());
                 String gameOverText = "Game Over";
                 String restartText = "Press SPACE to restart";
-                g.drawString(gameOverText, (WINDOW_WIDTH - metrics.stringWidth(gameOverText)) / 2, WINDOW_HEIGHT / 2 - 20);
-                g.setFont(new Font("Arial", Font.PLAIN, 20));
-                metrics = getFontMetrics(g.getFont());
-                g.drawString(restartText, (WINDOW_WIDTH - metrics.stringWidth(restartText)) / 2, WINDOW_HEIGHT / 2 + 20);
+                g2d.drawString(gameOverText, (WINDOW_WIDTH - metrics.stringWidth(gameOverText)) / 2, WINDOW_HEIGHT / 2 - 20);
+                g2d.setFont(new Font("Segoe UI", Font.PLAIN, 22));
+                metrics = getFontMetrics(g2d.getFont());
+                g2d.drawString(restartText, (WINDOW_WIDTH - metrics.stringWidth(restartText)) / 2, WINDOW_HEIGHT / 2 + 24);
             }
         }
     }
